@@ -860,7 +860,6 @@ class TreeTimeItem(QTreeWidgetItem):
             if layer.customProperty("qgis2web/Time from"):
                 self.timeFromCombo.setCurrentIndex(int(
                     layer.customProperty("qgis2web/Time from")))
-            self.timeFromCombo.highlighted.connect(self.clickCombo)
             self.timeFromCombo.currentIndexChanged.connect(self.saveLayerTimeFromComboSettings)
             tree.setItemWidget(self.timeFromItem, 1, self.timeFromCombo)
 
@@ -876,7 +875,6 @@ class TreeTimeItem(QTreeWidgetItem):
             if layer.customProperty("qgis2web/Time to"):
                 self.timeToCombo.setCurrentIndex(int(
                     layer.customProperty("qgis2web/Time to")))
-            self.timeToCombo.highlighted.connect(self.clickCombo)
             self.timeToCombo.currentIndexChanged.connect(self.saveLayerTimeToComboSettings)
             tree.setItemWidget(self.timeToItem, 1, self.timeToCombo)
 
@@ -912,21 +910,13 @@ class TreeTimeItem(QTreeWidgetItem):
         # print str(timefrom)
         return timeto
 
-    def clickCombo(self):
-        global selectedLayerCombo
-        selectedLayerCombo = self.layer
-
     def saveLayerTimeFromComboSettings(self, value):
-        global selectedLayerCombo
-        if selectedLayerCombo != "None":
-            selectedLayerCombo.setCustomProperty("qgis2web/Time from", value)
-            self.populateMinMax()
+        self.layer.setCustomProperty("qgis2web/Time from", value)
+        self.populateMinMax()
 
     def saveLayerTimeToComboSettings(self, value):
-        global selectedLayerCombo
-        if selectedLayerCombo != "None":
-            selectedLayerCombo.setCustomProperty("qgis2web/Time to", value)
-            self.populateMinMax()
+        self.layer.setCustomProperty("qgis2web/Time to", value)
+        self.populateMinMax()
 
     # ruzicka
     # TODO
