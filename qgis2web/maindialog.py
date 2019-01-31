@@ -40,6 +40,7 @@ from PyQt5.QtCore import (QObject,
                           QUrl,
                           QByteArray,
                           QEvent,
+                          QDate,
                           Qt)
 from PyQt5.QtGui import (QIcon)
 from PyQt5.QtWidgets import (QAction,
@@ -139,6 +140,7 @@ class MainDialog(QDialog, FORM_CLASS):
         self.right_layout.insertWidget(0, widget)
         self.populateConfigParams(self)
         self.populate_layers_and_groups(self)
+        self.populate_time_params(self)
         self.populateLayerSearch()
 
         writer = WRITER_REGISTRY.createWriterFromProject()
@@ -383,6 +385,48 @@ class MainDialog(QDialog, FORM_CLASS):
         self.layersTree.resizeColumnToContents(1)
         for i in range(self.layers_item.childCount()):
             item = self.layers_item.child(i)
+            if item.checkState(0) != Qt.Checked:
+                item.setExpanded(False)
+
+    def populate_time_params(self, dlg):
+        root_node = QgsProject.instance().layerTreeRoot()
+        tree_groups = []
+        tree_layers = root_node.findLayers()
+        self.time_item = QTreeWidgetItem()
+        self.time_item.setText(0, "Layers and Groups")
+        self.time_tree.setColumnCount(3)
+
+        for tree_layer in tree_layers:
+            layer = tree_layer.layer()
+            if (layer.type() != QgsMapLayer.PluginLayer and
+                    layer.customProperty("ol_layer_type") is None):
+                try:
+                    layer_parent = tree_layer.parent()
+                    if layer_parent.parent() is None:
+                        item = TreeTimeItem(self.iface, layer,
+                                            self.time_tree, dlg)
+                        self.time_item.addChild(item)
+                    else:
+                        if layer_parent not in tree_groups:
+                            tree_groups.append(layer_parent)
+                except:
+                    QgsMessageLog.logMessage(traceback.format_exc(),
+                                             "qgis2web",
+                                             level=Qgis.Critical)
+
+        for tree_group in tree_groups:
+            group_name = tree_group.name()
+            group_layers = [
+                tree_layer.layer() for tree_layer in tree_group.findLayers()]
+            item = TreeGroupItem(group_name, group_layers, self.time_tree)
+            self.time_item.addChild(item)
+
+        self.time_tree.addTopLevelItem(self.time_item)
+        self.time_tree.expandAll()
+        self.time_tree.resizeColumnToContents(0)
+        self.time_tree.resizeColumnToContents(1)
+        for i in range(self.time_item.childCount()):
+            item = self.time_item.child(i)
             if item.checkState(0) != Qt.Checked:
                 item.setExpanded(False)
 
@@ -784,6 +828,153 @@ class TreeLayerItem(QTreeWidgetItem):
     def changeGetFeatureInfo(self, isGetFeatureInfo):
         self.layer.setCustomProperty("qgis2web/GetFeatureInfo",
                                      isGetFeatureInfo)
+
+
+class TreeTimeItem(QTreeWidgetItem):
+    layerIcon = QIcon(os.path.join(os.path.dirname(__file__), "icons",
+                                   "layer.png"))
+
+    def __init__(self, iface, layer, tree, dlg):
+        QTreeWidgetItem.__init__(self)
+        self.iface = iface
+        self.layer = layer
+        self.setText(0, layer.name())
+        self.setIcon(0, self.layerIcon)
+        project = QgsProject.instance()
+        if project.layerTreeRoot().findLayer(layer.id()).isVisible():
+            self.setCheckState(0, Qt.Checked)
+        else:
+            self.setCheckState(0, Qt.Unchecked)
+        if layer.type() == layer.VectorLayer:
+            # TODO
+            # Remove no int or string fields or later handle other types
+            self.timeFromItem = QTreeWidgetItem(self)
+            self.timeFromItem.setText(0, "Time from")
+            self.timeFromCombo = QComboBox()
+            timeFromOptions = ["No time"]
+            for f in self.layer.fields():
+                timeFromOptions.append("FIELD:" + f.name())
+            for option in timeFromOptions:
+                self.timeFromCombo.addItem(option)
+            self.addChild(self.timeFromItem)
+            if layer.customProperty("qgis2web/Time from"):
+                self.timeFromCombo.setCurrentIndex(int(
+                    layer.customProperty("qgis2web/Time from")))
+            self.timeFromCombo.currentIndexChanged.connect(self.saveLayerTimeFromComboSettings)
+            tree.setItemWidget(self.timeFromItem, 1, self.timeFromCombo)
+
+            self.timeToItem = QTreeWidgetItem(self)
+            self.timeToItem.setText(0, "Time to")
+            self.timeToCombo = QComboBox()
+            timeToOptions = ["No time"]
+            for f in self.layer.fields():
+                timeToOptions.append("FIELD:" + f.name())
+            for option in timeToOptions:
+                self.timeToCombo.addItem(option)
+            self.addChild(self.timeToItem)
+            if layer.customProperty("qgis2web/Time to"):
+                self.timeToCombo.setCurrentIndex(int(
+                    layer.customProperty("qgis2web/Time to")))
+            self.timeToCombo.currentIndexChanged.connect(self.saveLayerTimeToComboSettings)
+            tree.setItemWidget(self.timeToItem, 1, self.timeToCombo)
+
+            self.populateMinMax()
+
+    @property
+    def timefrom(self):
+        try:
+            idx = self.timeFromCombo.currentIndex()
+            # print """IDX: """ + str(idx)
+            if idx < 1:
+                timefrom = idx
+            else:
+                timefrom = self.timeFromCombo.currentText()[len("FIELD:"):]
+        except:
+            # print "Unexpected error:", sys.exc_info()[1]
+            timefrom = utils.NO_TIME
+        # print str(timefrom)
+        return timefrom
+
+    @property
+    def timeto(self):
+        try:
+            idx = self.timeToCombo.currentIndex()
+            # print """IDX: """ + str(idx)
+            if idx < 1:
+                timeto = idx
+            else:
+                timeto = self.timeToCombo.currentText()[len("FIELD:"):]
+        except:
+            # print "Unexpected error:", sys.exc_info()[1]
+            timeto = utils.NO_TIME
+        # print str(timefrom)
+        return timeto
+
+    def saveLayerTimeFromComboSettings(self, value):
+        self.layer.setCustomProperty("qgis2web/Time from", value)
+        self.populateMinMax()
+
+    def saveLayerTimeToComboSettings(self, value):
+        self.layer.setCustomProperty("qgis2web/Time to", value)
+        self.populateMinMax()
+
+    # ruzicka
+    # TODO
+    def dateToInt(self, datestr):
+        datestr = datestr.replace("-", "")
+        if datestr == "NULL":
+            datestr = "1000"  # TODO work better with null dates
+        if len(datestr) == 4:
+            datestr = datestr + "0101"
+        if len(datestr) == 6:
+            datestr = datestr + "01"
+        return int(datestr)
+
+    def dateIntToString(self, dateint):
+        datestr = str(dateint)
+        dateout = datestr[0:4] + "-" + datestr[4:6] + "-" + datestr[6:8]
+        return dateout
+
+    def populateMinMax(self):
+        min = sys.maxsize
+        max = 0
+        root_node = QgsProject.instance().layerTreeRoot()
+        tree_layers = root_node.findLayers()
+        for tree_layer in tree_layers:
+            layer = tree_layer.layer()
+            if layer.type() == QgsMapLayer.VectorLayer:
+                if (layer.customProperty("qgis2web/Time from") is not None and
+                        layer.customProperty("qgis2web/Time to") is not None and
+                        layer.customProperty("qgis2web/Time from") is not None and
+                        layer.customProperty("qgis2web/Time to") is not None):
+                    for feat in layer.getFeatures():
+                        attrs = feat.attributes()
+                        attr_orig = attrs[int(layer.customProperty("qgis2web/Time from")) - 1]
+                        if type(attr_orig) is QDate:
+                            attr_orig = attr_orig.toString('yyyy-MM-dd')
+                        else:
+                            attr_orig = str(attr_orig)
+                        # attr = self.dateToInt(str(attrs[int(layer.customProperty("qgis2web/Time from")) - 1]))
+                        attr = self.dateToInt(attr_orig)
+                        if attr < min:
+                            min = attr
+                        attr2_orig = attrs[int(layer.customProperty("qgis2web/Time to")) - 1]
+                        if type(attr2_orig) is QDate:
+                            attr2_orig = attr2_orig.toString('yyyy-MM-dd')
+                        else:
+                            attr2_orig = str(attr2_orig)
+                        # attr2 = self.dateToInt(str(attrs[int(layer.customProperty("qgis2web/Time to")) - 1]))
+                        attr2 = self.dateToInt(attr2_orig)
+                        if attr2 > max:
+                            max = attr2
+        project = QgsProject.instance()
+        project.writeEntry("qgis2web", "Min", self.dateIntToString(min))
+        project.writeEntry("qgis2web", "Max", self.dateIntToString(max))
+        # print(min)
+        # print(max)
+        # TODO add text boxes
+        # self.items["Time axis"]["Min"].lineedit.setText(str(min))
+        # self.items["Time axis"]["Max"].lineedit.setText(str(max))
 
 
 class TreeSettingItem(QTreeWidgetItem):
