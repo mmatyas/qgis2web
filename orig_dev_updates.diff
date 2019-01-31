@@ -1,0 +1,348 @@
+diff --git a/qgis2web/ui_maindialog.py b/qgis2web/ui_maindialog.py
+index 7bfaa88..5b96177 100644
+--- a/qgis2web/ui_maindialog.py
++++ b/qgis2web/ui_maindialog.py
+@@ -8,7 +8,7 @@
+ # WARNING! All changes made in this file will be lost!
+ 
+ from PyQt5 import QtCore, QtGui, QtWidgets
+-from .ui_timedialog import Ui_TimeDialog
++from ui_timedialog import Ui_TimeDialog
+ 
+ try:
+     _fromUtf8 = QtCore.QString.fromUtf8
+diff --git a/qgis2web/ui_timedialog.py b/qgis2web/ui_timedialog.py
+index dfd5060..4ca8c26 100644
+--- a/qgis2web/ui_timedialog.py
++++ b/qgis2web/ui_timedialog.py
+@@ -1,7 +1,7 @@
+ from PyQt5 import QtCore, QtGui, QtWidgets, QtWebKit
+ import sys
+ from collections import defaultdict
+-import qgis  
++import qgis
+ from PyQt5.QtCore import *
+ from PyQt5.QtGui import *
+ from PyQt5.QtWidgets import *
+@@ -34,13 +34,14 @@ except AttributeError:
+ 
+ class Ui_TimeDialog(object):
+     def __init__(self, tabWidget, MainDialog):
++        print("HEllO wORLD!")
+     ## def setupUi(self, tabWidget, MainDialog):
+         self.maindialog = MainDialog
+         self.tab_3 = QtWidgets.QWidget()
+         self.tab_3.setObjectName(_fromUtf8("tab_3"))
+         self.tab3_Layout = QtWidgets.QVBoxLayout(self.tab_3)
+         self.tab3_Layout.setObjectName(_fromUtf8("tab3_Layout"))
+-        
++
+         self.layersTree = QtWidgets.QTreeWidget(self.tab_3)
+         self.tab3_Layout.addWidget(self.layersTree)
+         self.layersTree.setMinimumSize(QtCore.QSize(400, 0))
+@@ -53,6 +54,12 @@ class Ui_TimeDialog(object):
+ 
+         self.populate_layers_and_groups(self)
+ 
++        self.chkRange = QtGui.QCheckBox(self.tab_3)
++        self.chkRange.setObjectName(_fromUtf8("chkRange"))
++        self.chkRange.setText(QtGui.QApplication.translate(
++            "MainDialog", "Slider Range", None, QtGui.QApplication.UnicodeUTF8))
++        self.tab3_Layout.addWidget(self.chkRange)
++
+         self.btn = Button(tabWidget, self)
+         self.tab3_Layout.addWidget(self.btn)
+ 
+@@ -79,7 +86,7 @@ class Ui_TimeDialog(object):
+                     if layer.type() == QgsMapLayer.VectorLayer:
+                         testDump = layer.renderer().dump()
+                     layer_parent = tree_layer.parent()
+-                    # print "Vector: " + layer.name()
++                    print "Vector: " + layer.name()
+                     if layer_parent.parent() is None:
+                         item = TreeLayerItem2(layer, self.layersTree, dlg)
+                         self.layers_item.addChild(item)
+@@ -87,9 +94,9 @@ class Ui_TimeDialog(object):
+                         if layer_parent not in tree_groups:
+                             tree_groups.append(layer_parent)
+                 except:
+-                    # print "Except: " + layer.name()
+-                    # print "Unexpected error:", sys.exc_info()[0]
+-                    # raise
++                    print "Except: " + layer.name()
++                    print "Unexpected error:", sys.exc_info()[0]
++                    raise
+                     pass
+ 
+         for tree_group in tree_groups:
+@@ -214,9 +221,9 @@ class TreeLayerItem2(QTreeWidgetItem):
+ 
+     def clickCombo(self):
+         global selectedLayerCombo
+-        # print self.layer.name()
++        print self.layer.name()
+         selectedLayerCombo = self.layer
+-        
++
+     def saveLayerTimeFromComboSettings(self, value):
+         global selectedLayerCombo
+         if selectedLayerCombo != "None":
+@@ -228,7 +235,7 @@ class TreeLayerItem2(QTreeWidgetItem):
+         if selectedLayerCombo != "None":
+             selectedLayerCombo.setCustomProperty("qgis2web/Time to", value)
+             self.populateMinMax()
+-            
++
+     #ruzicka
+     #TODO
+     def dateToInt(self, datestr):
+@@ -258,10 +265,22 @@ class TreeLayerItem2(QTreeWidgetItem):
+                 if layer.customProperty("qgis2web/Time from") is not None and layer.customProperty("qgis2web/Time to") is not None and layer.customProperty("qgis2web/Time from") is not QPyNullVariant and layer.customProperty("qgis2web/Time to") is not QPyNullVariant:
+                     for feat in layer.getFeatures():
+                         attrs = feat.attributes()
+-                        attr = self.dateToInt(str(attrs[int(layer.customProperty("qgis2web/Time from")) - 1]))
++                        attr_orig = attrs[int(layer.customProperty("qgis2web/Time from")) - 1]
++                        if type(attr_orig) is PyQt4.QtCore.QDate:
++                            attr_orig = attr_orig.toString('yyyy-MM-dd')
++                        else:
++                            attr_orig = str(attr_orig)
++                        #attr = self.dateToInt(str(attrs[int(layer.customProperty("qgis2web/Time from")) - 1]))
++                        attr = self.dateToInt(attr_orig)
+                         if attr < min:
+                             min = attr
+-                        attr2 = self.dateToInt(str(attrs[int(layer.customProperty("qgis2web/Time to")) - 1]))
++                        attr2_orig = attrs[int(layer.customProperty("qgis2web/Time to")) - 1]
++                        if type(attr2_orig) is PyQt4.QtCore.QDate:
++                            attr2_orig = attr2_orig.toString('yyyy-MM-dd')
++                        else:
++                            attr2_orig = str(attr2_orig)
++                        #attr2 = self.dateToInt(str(attrs[int(layer.customProperty("qgis2web/Time to")) - 1]))
++                        attr2 = self.dateToInt(attr2_orig)
+                         if attr2 > max:
+                             max = attr2
+         projectInstance.writeEntry("qgis2web", "Min", self.dateIntToString(min))
+@@ -286,7 +305,7 @@ class Button(QPushButton):
+         self.setIcon(icon)
+         self.setText(_translate("MainDialog", "Add Time", None))
+         self.clicked.connect(self.saveMap) #connect here!
+-        
++
+     def saveMap(self):
+         #if projectInstance.readEntry("qgis2web", "mapFormat")[0] == "leaflet":
+         #    self.saveLeafletMap()
+@@ -296,12 +315,12 @@ class Button(QPushButton):
+             self.saveOLMap()
+         else:
+             self.saveLeafletMap()
+-        QMessageBox.information(None, "INFO", "Time options were added to index_time.html file.") 
+-        
++        QMessageBox.information(None, "INFO", "Time options were added to index_time.html file.")
++
+     def saveLeafletMap(self):
+-        # print "Save leaflet"
++        print "Save leaflet"
+         dir = projectInstance.readEntry("qgis2web", "Exportfolder")[0]
+-        # print dir
++        print dir
+         root, dirs, files = os.walk(dir).next()
+         latest_subdir = max((os.path.getctime(os.path.join(root, f)), f) for f in dirs)
+         index = os.path.join(dir, latest_subdir[1], 'index.html')
+@@ -315,14 +334,14 @@ class Button(QPushButton):
+     def addLeafletHeader(self, html):
+         mintime = projectInstance.readEntry("qgis2web", "Min")[0]
+         maxtime = projectInstance.readEntry("qgis2web", "Max")[0]
+-        
++
+         header = '<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>\n'
+         header += '<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />\n'
+         header += '<script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>\n'
+         header += '<div style="position: fixed; top: 10px; left: 70px;"><div id="slider-range" style="width:300px"></div>\n'
+         header += '<p><input id="datefrom"/>   <input id="dateto"/> </p>\n'
+         header += '</div>\n'
+-        
++
+         header += "<script>\n"
+         header += "function getDateString(d) {\n"
+         header += "m = d.getMonth() + 1;\n"
+@@ -332,7 +351,10 @@ class Button(QPushButton):
+         header += "}\n"
+         header += "$(document).ready(function() {\n"
+         header += "$( '#slider-range' ).slider({\n"
+-        header += "range: true,\n"
++        if not self.main.chkRange.isChecked():
++            header += "range: false,\n"
++        else:
++            header += "range: true,\n"
+         header += "min: new Date('" + mintime + "').getTime() / 1000,\n"
+         header += "max: new Date('" + maxtime + "').getTime() / 1000,\n"
+         header += "step: 86400,\n"
+@@ -341,17 +363,20 @@ class Button(QPushButton):
+         header += "var from = new Date(ui.values[0] *1000);\n"
+         header += "var to = new Date(ui.values[1] *1000);\n"
+         header += "$( '#datefrom' ).val(getDateString(new Date(ui.values[0] *1000)));\n"
+-        header += "$( '#dateto' ).val(getDateString(new Date(ui.values[1] *1000)));\n"
++        if not self.main.chkRange.isChecked():
++            header += "$( '#dateto' ).val(getDateString(new Date(ui.values[0] *1000)));\n"
++        else:
++            header += "$( '#dateto' ).val(getDateString(new Date(ui.values[1] *1000)));\n"
+         header += "setVisibility();\n"
+         header += "}\n"
+         header += "});\n"
+-        
++
+         header += "var from = new Date($('#slider-range').slider('values', 0)*1000);\n"
+         header += "var to = new Date($('#slider-range').slider('values', 1)*1000);\n"
+         header += "$( '#datefrom' ).val(getDateString(from));\n"
+         header += "$( '#dateto' ).val(getDateString(to));\n"
+         header += "});\n"
+-        
++
+         html = html.replace("<script>", header)
+         return html
+ 
+@@ -378,7 +403,7 @@ class Button(QPushButton):
+                     #print layer.customProperty("qgis2web/Time from")
+                     field_from = layer.pendingFields()[int(layer.customProperty("qgis2web/Time from"))-1].name()
+                     field_to = layer.pendingFields()[int(layer.customProperty("qgis2web/Time to"))-1].name()
+-                    
++
+                     style += "var featuredatefrom = String(feature.properties." + field_from + ");\n"
+                     style += "var featuredateto = String(feature.properties." + field_to + ");\n"
+                     style += "if (featuredatefrom.length == 4) { featuredatefrom = featuredatefrom + '-01-01'; }\n"
+@@ -396,21 +421,21 @@ class Button(QPushButton):
+ 
+                     style += "return s;\n"
+                     style += "}\n"
+-                    
+-                    style += "function setVisibility" + layer.name() + layeridstr + "() {\n"   
++
++                    style += "function setVisibility" + layer.name() + layeridstr + "() {\n"
+                     style += "for (var row=0; row<1000; row++) {\n"
+                     style += "if ( typeof(layer_" + layer.name() + layeridstr + "._layers[row])=='undefined') continue;\n"
+                     style += "  s = style_" + layer.name() + layeridstr + "_0(layer_" + layer.name() + layeridstr + "._layers[row].feature);\n"
+                     style += "  layer_" + layer.name() + layeridstr + "._layers[row].setStyle(s);\n"
+-                    style += " }\n"      
++                    style += " }\n"
+                     style += "}\n"
+                     html = html[:start] + style + html[end+1:]
+                     start = html.find("function doPointToLayer" + layer.name())
+-                    if start != -1:                  
++                    if start != -1:
++                        start = html.find("(", start + 1)
++                        start = html.find("(", start + 1)
+                         start = html.find("(", start + 1)
+-                        start = html.find("(", start + 1) 
+-                        start = html.find("(", start + 1)  
+-                        html = html[:start] + "(feature" + html[start+1:]        
++                        html = html[:start] + "(feature" + html[start+1:]
+                 layerid -= 1
+         fvisibility = "function setVisibility() {\n"
+         for layername in layernames:
+@@ -418,36 +443,36 @@ class Button(QPushButton):
+         fvisibility += "}\n"
+         html = html.replace("setBounds();", fvisibility + "setBounds();")
+         return html
+-    
++
+     def saveOLMap(self):
+-        # print "Save OL"
++        print "Save OL"
+         dir = projectInstance.readEntry("qgis2web", "Exportfolder")[0]
+         if dir == "":
+             if os.path.isdir("/tmp/qgis2web"):
+                 dir = "/tmp/qgis2web"
+             if os.path.isdir("C:\\TEMP\\qgis2web"):
+                 dir = "C:\\TEMP\\qgis2web"
+-        # print dir
++        print dir
+         root, dirs, files = next(os.walk(dir))
+         latest_subdir = max((os.path.getctime(os.path.join(root, f)), f) for f in dirs)
+-        
++
+         index = os.path.join(dir, latest_subdir[1], 'index.html')
+         html = open(index, 'r').read()
+-        
++
+         layernames = self.changeOLStyles(os.path.join(dir, latest_subdir[1], 'styles'))
+-        
++
+         fvisibility = "function setVisibility() {\n"
+         for layername in layernames:
+             fvisibility += "lyr_" + layername + ".getSource().changed();\n"
+         fvisibility += "}</script>\n"
+-        
++
+         html = html.replace("_style.js", "_style_time.js")
+-        
++
+         mintime = projectInstance.readEntry("qgis2web", "Min")[0]
+-        maxtime = projectInstance.readEntry("qgis2web", "Max")[0]        
++        maxtime = projectInstance.readEntry("qgis2web", "Max")[0]
+         header = '<head>\n<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>\n'
+         header += '<script>\n'
+-        
++
+         header += "function getDateString(d) {\n"
+         header += "m = d.getMonth() + 1;\n"
+         header += "month = String('0' + m).slice(-2);\n"
+@@ -457,7 +482,10 @@ class Button(QPushButton):
+ 
+         header += "$(document).ready(function() {\n"
+         header += "$( '#slider-range' ).slider({\n"
+-        header += "range: true,\n"
++        if not self.main.chkRange.isChecked():
++            header += "range: false,\n"
++        else:
++            header += "range: true,\n"
+         header += "min: new Date('" + mintime + "').getTime() / 1000,\n"
+         header += "max: new Date('" + maxtime + "').getTime() / 1000,\n"
+         header += "step: 86400,\n"
+@@ -466,7 +494,10 @@ class Button(QPushButton):
+         header += "var from = new Date(ui.values[0] *1000);\n"
+         header += "var to = new Date(ui.values[1] *1000);\n"
+         header += "$( '#datefrom' ).val(getDateString(new Date(ui.values[0] *1000)));\n"
+-        header += "$( '#dateto' ).val(getDateString(new Date(ui.values[1] *1000)));\n"
++        if not self.main.chkRange.isChecked():
++            header += "$( '#dateto' ).val(getDateString(new Date(ui.values[0] *1000)));\n"
++        else:
++            header += "$( '#dateto' ).val(getDateString(new Date(ui.values[1] *1000)));\n"
+         header += "setVisibility();\n"
+         header += "}\n"
+         header += "});\n"
+@@ -475,10 +506,10 @@ class Button(QPushButton):
+         header += "$( '#datefrom' ).val(getDateString(from));\n"
+         header += "$( '#dateto' ).val(getDateString(to));\n"
+         header += "});\n"
+-        
++
+         header += fvisibility
+         html = html.replace("<head>", header)
+-        
++
+         header = '<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />\n'
+         header += '<script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>\n'
+         header += '<div style="position: fixed; top: 10px; left: 70px;"><div id="slider-range" style="width:300px"></div>\n'
+@@ -486,12 +517,12 @@ class Button(QPushButton):
+         header += '</div>\n'
+         #header = '<p style="position: fixed; top: 0; right: 0;">Time axis: <input type="range" id="date" min="' + mintime + '" max="' + maxtime + '"/><input id="datetxt"/></p></body>'
+         html = html.replace("</body>", header)
+-        
++
+         index_time = os.path.join(dir, latest_subdir[1], 'index_time.html')
+         f = open(index_time, 'w')
+         f.write(html)
+         f.close()
+-    
++
+     def changeOLStyles(self, path):
+         root_node = QgsProject.instance().layerTreeRoot()
+         tree_layers = root_node.findLayers()
+@@ -542,7 +573,7 @@ class Button(QPushButton):
+                     f.close()
+                 layerid -= 1
+         return layernames
+-    
++
+     def changeAlpha(self, styledef):
+         #TODO rekurze na zmenu u vsech rgb
+         rgbastart = styledef.find("rgba")
