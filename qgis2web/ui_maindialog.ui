@@ -129,6 +129,27 @@
              </column>
             </widget>
            </item>
+           <item>
+            <widget class="QCheckBox" name="time_slider_range">
+             <property name="text">
+              <string>Slider Range</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="time_gen_btn">
+             <property name="text">
+              <string>Add time</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>icons/qgis2web.png</normaloff>icons/qgis2web.png</iconset>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>

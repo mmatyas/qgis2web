@@ -52,7 +52,8 @@ from PyQt5.QtWidgets import (QAction,
                              QCheckBox,
                              QToolButton,
                              QWidget,
-                             QTextBrowser)
+                             QTextBrowser,
+                             QMessageBox)
 from PyQt5.QtNetwork import QNetworkAccessManager
 from PyQt5.uic import loadUiType
 from qgis.PyQt.QtWebKitWidgets import QWebView, QWebInspector, QWebPage
@@ -61,7 +62,7 @@ from qgis.PyQt.QtWebKit import QWebSettings
 import traceback
 import logging
 
-from . import utils
+from . import utils, timeext
 from qgis2web.configparams import (getParams,
                                    specificParams,
                                    specificOptions)
@@ -163,6 +164,7 @@ class MainDialog(QDialog, FORM_CLASS):
         self.ol3.clicked.connect(self.changeFormat)
         self.leaflet.clicked.connect(self.changeFormat)
         self.buttonExport.clicked.connect(self.saveMap)
+        self.time_gen_btn.clicked.connect(self.saveTimeMap)
         helpText = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                 "helpFile.md")
         self.helpField.setSource(QUrl.fromLocalFile(helpText))
@@ -342,6 +344,14 @@ class MainDialog(QDialog, FORM_CLASS):
         if result and (not os.environ.get('CI') and
                        not os.environ.get('TRAVIS')):
             webbrowser.open_new_tab(self.exporter.destinationUrl())
+
+    def saveTimeMap(self):
+        with_slider_range = self.time_slider_range.isChecked()
+        if self.ol3.isChecked():
+            timeext.saveOLMap(with_slider_range)
+        else:
+            timeext.saveLeafletMap(with_slider_range)
+        QMessageBox.information(None, "INFO", "Time options were added to index_time.html file.")
 
     def populate_layers_and_groups(self, dlg):
         """Populate layers on QGIS into our layers and group tree view."""
