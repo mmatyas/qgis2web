@@ -351,7 +351,10 @@ class MainDialog(QDialog, FORM_CLASS):
             timeext.saveOLMap(with_slider_range)
         else:
             timeext.saveLeafletMap(with_slider_range)
-        QMessageBox.information(None, "INFO", "Time options were added to index_time.html file.")
+        QMessageBox.information(
+            None,
+            "INFO",
+            "Time options were added to index_time.html file.")
 
     def populate_layers_and_groups(self, dlg):
         """Populate layers on QGIS into our layers and group tree view."""
@@ -870,7 +873,8 @@ class TreeTimeItem(QTreeWidgetItem):
             if layer.customProperty("qgis2web/Time from"):
                 self.timeFromCombo.setCurrentIndex(int(
                     layer.customProperty("qgis2web/Time from")))
-            self.timeFromCombo.currentIndexChanged.connect(self.saveLayerTimeFromComboSettings)
+            self.timeFromCombo.currentIndexChanged.connect(
+                self.saveLayerTimeFromComboSettings)
             tree.setItemWidget(self.timeFromItem, 1, self.timeFromCombo)
 
             self.timeToItem = QTreeWidgetItem(self)
@@ -885,7 +889,8 @@ class TreeTimeItem(QTreeWidgetItem):
             if layer.customProperty("qgis2web/Time to"):
                 self.timeToCombo.setCurrentIndex(int(
                     layer.customProperty("qgis2web/Time to")))
-            self.timeToCombo.currentIndexChanged.connect(self.saveLayerTimeToComboSettings)
+            self.timeToCombo.currentIndexChanged.connect(
+                self.saveLayerTimeToComboSettings)
             tree.setItemWidget(self.timeToItem, 1, self.timeToCombo)
 
             self.populateMinMax()
@@ -953,27 +958,24 @@ class TreeTimeItem(QTreeWidgetItem):
         for tree_layer in tree_layers:
             layer = tree_layer.layer()
             if layer.type() == QgsMapLayer.VectorLayer:
-                if (layer.customProperty("qgis2web/Time from") is not None and
-                        layer.customProperty("qgis2web/Time to") is not None and
-                        layer.customProperty("qgis2web/Time from") is not None and
-                        layer.customProperty("qgis2web/Time to") is not None):
+                prop_t_from = layer.customProperty("qgis2web/Time from")
+                prop_t_to = layer.customProperty("qgis2web/Time to")
+                if prop_t_from is not None and prop_t_to is not None:
                     for feat in layer.getFeatures():
                         attrs = feat.attributes()
-                        attr_orig = attrs[int(layer.customProperty("qgis2web/Time from")) - 1]
+                        attr_orig = attrs[int(prop_t_from) - 1]
                         if type(attr_orig) is QDate:
                             attr_orig = attr_orig.toString('yyyy-MM-dd')
                         else:
                             attr_orig = str(attr_orig)
-                        # attr = self.dateToInt(str(attrs[int(layer.customProperty("qgis2web/Time from")) - 1]))
                         attr = self.dateToInt(attr_orig)
                         if attr < min:
                             min = attr
-                        attr2_orig = attrs[int(layer.customProperty("qgis2web/Time to")) - 1]
+                        attr2_orig = attrs[int(prop_t_to) - 1]
                         if type(attr2_orig) is QDate:
                             attr2_orig = attr2_orig.toString('yyyy-MM-dd')
                         else:
                             attr2_orig = str(attr2_orig)
-                        # attr2 = self.dateToInt(str(attrs[int(layer.customProperty("qgis2web/Time to")) - 1]))
                         attr2 = self.dateToInt(attr2_orig)
                         if attr2 > max:
                             max = attr2
