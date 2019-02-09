@@ -28,7 +28,8 @@ def addLeafletHeader(html, with_slider_range):
     header = '<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>\n'
     header += '<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />\n'
     header += '<script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>\n'
-    header += '<div style="position: fixed; top: 10px; left: 70px;"><div id="slider-range" style="width:300px"></div>\n'
+    header += '<div style="position: fixed; top: 10px; left: 70px;">' \
+        + '<div id="slider-range" style="width:300px"></div>\n'
     header += '<p><input id="datefrom"/>   <input id="dateto"/> </p>\n'
     header += '</div>\n'
 
@@ -49,7 +50,8 @@ def addLeafletHeader(html, with_slider_range):
     header += "min: new Date('" + mintime + "').getTime() / 1000,\n"
     header += "max: new Date('" + maxtime + "').getTime() / 1000,\n"
     header += "step: 86400,\n"
-    header += "values: [ new Date('" + mintime + "').getTime() / 1000, new Date('" + maxtime + "').getTime() / 1000 ],\n"
+    header += "values: [ new Date('" + mintime + "').getTime() / 1000, " \
+        + "new Date('" + maxtime + "').getTime() / 1000 ],\n"
     header += "slide: function( event, ui ) {\n"
     header += "var from = new Date(ui.values[0] *1000);\n"
     header += "var to = new Date(ui.values[1] *1000);\n"
@@ -119,17 +121,18 @@ def changeLeafletStyles(html):
                 style += "function setVisibility" + layer.name() + layeridstr + "() {\n"
                 style += "for (var row=0; row<1000; row++) {\n"
                 style += "if ( typeof(layer_" + layer.name() + layeridstr + "._layers[row])=='undefined') continue;\n"
-                style += "  s = style_" + layer.name() + layeridstr + "_0(layer_" + layer.name() + layeridstr + "._layers[row].feature);\n"
+                style += "  s = style_" + layer.name() + layeridstr + "_0(layer_" \
+                    + layer.name() + layeridstr + "._layers[row].feature);\n"
                 style += "  layer_" + layer.name() + layeridstr + "._layers[row].setStyle(s);\n"
                 style += " }\n"
                 style += "}\n"
-                html = html[:start] + style + html[end+1:]
+                html = html[:start] + style + html[end + 1:]
                 start = html.find("function doPointToLayer" + layer.name())
                 if start != -1:
                     start = html.find("(", start + 1)
                     start = html.find("(", start + 1)
                     start = html.find("(", start + 1)
-                    html = html[:start] + "(feature" + html[start+1:]
+                    html = html[:start] + "(feature" + html[start + 1:]
             layerid -= 1
     fvisibility = "function setVisibility() {\n"
     for layername in layernames:
@@ -186,7 +189,8 @@ def saveOLMap(with_slider_range):
     header += "min: new Date('" + mintime + "').getTime() / 1000,\n"
     header += "max: new Date('" + maxtime + "').getTime() / 1000,\n"
     header += "step: 86400,\n"
-    header += "values: [ new Date('" + mintime + "').getTime() / 1000, new Date('" + maxtime + "').getTime() / 1000 ],\n"
+    header += "values: [ new Date('" + mintime + "').getTime() / 1000, new Date('" \
+        + maxtime + "').getTime() / 1000 ],\n"
     header += "slide: function( event, ui ) {\n"
     header += "var from = new Date(ui.values[0] *1000);\n"
     header += "var to = new Date(ui.values[1] *1000);\n"
@@ -209,7 +213,8 @@ def saveOLMap(with_slider_range):
 
     header = '<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />\n'
     header += '<script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>\n'
-    header += '<div style="position: fixed; top: 10px; left: 70px;"><div id="slider-range" style="width:300px"></div>\n'
+    header += '<div style="position: fixed; top: 10px; left: 70px;">' \
+        + '<div id="slider-range" style="width:300px"></div>\n'
     header += '<p><input id="datefrom"/>   <input id="dateto"/> </p>\n'
     header += '</div>\n'
     html = html.replace("</body>", header)
